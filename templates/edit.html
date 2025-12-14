@@ -1,13 +1,33 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="pl-PL">
 <head>
     <meta charset="UTF-8">
-    <title>DevSecOps ToDo App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Edytuj">
+    <title>Edytuj ToDo</title>
 </head>
 <body>
-    <form action="{{ url_for('edit', index=index) }}" method="post">
-        <input type="text" name="todos" value="{{ todos['task'] }}">
-        <button type="submit">Save</button>
-    </form>
+    <header>
+        <h1>Edytuj ToDo</h1>
+    </header>
+    <main>
+        <section aria-label="Formularz edycji zadania">
+            <form action="{{ url_for('edit', index=index) }}" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <label for="edit-todo-input">Treść zadania:</label>
+                <input type="text" 
+                       id="edit-todo-input" 
+                       name="todos" 
+                       value="{{ todos['task'] }}" 
+                       required 
+                       minlength="1" 
+                       maxlength="200"
+                       aria-required="true"
+                       aria-label="Treść">
+                <button type="submit">Save</button>
+                <a href="{{ url_for('index') }}">Cancel</a>
+            </form>
+        </section>
+    </main>
 </body>
 </html>
