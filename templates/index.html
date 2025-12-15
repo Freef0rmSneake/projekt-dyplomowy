@@ -16,16 +16,16 @@
                 {% for todos in todo %}
                     <li>
                         <input type="checkbox" 
-                               id="todo-{{ loop.index0 }}"
+                               id="todo-{{ todos['id'] }}"
                                aria-label="Status wykonania zadania '{{ todos['task'] }}'" 
                                {% if todos['done'] %} checked {%endif%} 
                                disabled>
-                        <label for="todo-{{ loop.index0 }}">
+                        <label for="todo-{{ todos['id'] }}">
                             <span {%if todos['done'] %} style="text-decoration: line-through" {%endif%}>{{ todos['task'] }}</span>
                         </label>
-                        <a href="{{ url_for('check', index=loop.index0) }}" aria-label="Oznacz '{{ todos['task'] }}' jako wykonane">Check</a>
-                        <a href="{{ url_for('edit', index=loop.index0) }}" aria-label="Edytuj '{{ todos['task'] }}'">Edit</a>
-                        <a href="{{ url_for('delete', index=loop.index0) }}" aria-label="Usuń '{{ todos['task'] }}'">Delete</a>
+                        <a href="{{ url_for('check', index=todos['id']) }}" aria-label="Oznacz '{{ todos['task'] }}' jako wykonane">Check</a>
+                        <a href="{{ url_for('edit', index=todos['id']) }}" aria-label="Edytuj '{{ todos['task'] }}'">Edit</a>
+                        <a href="{{ url_for('delete', index=todos['id']) }}" aria-label="Usuń '{{ todos['task'] }}'">Delete</a>
                     </li>
                 {% endfor %}
             </ul>
