@@ -5,46 +5,262 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Aplikacja do zarządzania listą zadań">
     <title>DevSecOps ToDo App</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom Styles -->
+    <style>
+        :root {
+            --pastel-green: #a8d5ba;
+            --pastel-green-light: #c8e6c9;
+            --pastel-green-dark: #7fb89a;
+            --pastel-brown: #d4a574;
+            --pastel-brown-light: #e8d5b7;
+            --pastel-brown-dark: #b8935f;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--pastel-green-light) 0%, var(--pastel-brown-light) 100%);
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+        
+        .main-container {
+            max-width: 800px;
+        }
+        
+        .header-card {
+            background-color: var(--pastel-green);
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .header-card h1 {
+            color: #2d5a3d;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .todo-card {
+            background-color: white;
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .todo-card .card-body {
+            padding: 1.5rem;
+        }
+        
+        .todo-item {
+            background-color: var(--pastel-green-light);
+            border: 1px solid var(--pastel-green);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+        }
+        
+        .todo-item:hover {
+            background-color: var(--pastel-green);
+            transform: translateX(5px);
+        }
+        
+        .todo-item.done {
+            background-color: var(--pastel-brown-light);
+            border-color: var(--pastel-brown);
+        }
+        
+        .todo-item.done:hover {
+            background-color: var(--pastel-brown);
+        }
+        
+        .todo-text {
+            flex-grow: 1;
+            margin-left: 0.75rem;
+        }
+        
+        .todo-text.completed {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+        
+        .btn-edit {
+            background-color: var(--pastel-brown-dark);
+            border-color: var(--pastel-brown-dark);
+            color: white;
+        }
+        
+        .btn-edit:hover {
+            background-color: var(--pastel-brown);
+            border-color: var(--pastel-brown);
+            color: #5a3d2d;
+        }
+        
+        .btn-delete {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: white;
+        }
+        
+        .btn-delete:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+        
+        .form-card {
+            background-color: white;
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-control {
+            border: 2px solid var(--pastel-green);
+            border-radius: 10px;
+        }
+        
+        .form-control:focus {
+            border-color: var(--pastel-green-dark);
+            box-shadow: 0 0 0 0.2rem rgba(168, 213, 186, 0.25);
+        }
+        
+        .btn-submit {
+            background-color: var(--pastel-green-dark);
+            border-color: var(--pastel-green-dark);
+            color: white;
+            border-radius: 10px;
+            padding: 0.5rem 2rem;
+            font-weight: 500;
+        }
+        
+        .btn-submit:hover {
+            background-color: var(--pastel-green);
+            border-color: var(--pastel-green);
+            color: #2d5a3d;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+        
+        .form-check-input:checked {
+            background-color: var(--pastel-green-dark);
+            border-color: var(--pastel-green-dark);
+        }
+        
+        .form-check-input:focus {
+            border-color: var(--pastel-green-dark);
+            box-shadow: 0 0 0 0.2rem rgba(168, 213, 186, 0.25);
+        }
+        
+        .todo-checkbox {
+            cursor: pointer;
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+        
+        .todo-checkbox:hover {
+            border-color: var(--pastel-green-dark);
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <h1>Lista Zadań</h1>
-    </header>
-    <main>
-        <section aria-label="Lista zadań">
-            <ul>
-                {% for todos in todo %}
-                    <li>
-                        <input type="checkbox" 
-                               id="todo-{{ todos['id'] }}"
-                               aria-label="Status wykonania zadania '{{ todos['task'] }}'" 
-                               {% if todos['done'] %} checked {%endif%} 
-                               disabled>
-                        <label for="todo-{{ todos['id'] }}">
-                            <span {%if todos['done'] %} style="text-decoration: line-through" {%endif%}>{{ todos['task'] }}</span>
-                        </label>
-                        <a href="{{ url_for('check', index=todos['id']) }}" aria-label="Oznacz '{{ todos['task'] }}' jako wykonane">Check</a>
-                        <a href="{{ url_for('edit', index=todos['id']) }}" aria-label="Edytuj '{{ todos['task'] }}'">Edit</a>
-                        <a href="{{ url_for('delete', index=todos['id']) }}" aria-label="Usuń '{{ todos['task'] }}'">Delete</a>
-                    </li>
-                {% endfor %}
-            </ul>
-        </section>
-        <section aria-label="Dodaj nowe zadanie">
-            <form action="{{ url_for('add') }}" method="post">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <label for="todo-input">Nowe zadanie:</label>
-                <input type="text" 
-                       id="todo-input" 
-                       name="todos" 
-                       required 
-                       minlength="1" 
-                       maxlength="200"
-                       aria-required="true"
-                       aria-label="Wpisz treść nowego zadania">
-                <button type="submit">Add ToDo</button>
-            </form>
-        </section>
-    </main>
+    <div class="container main-container">
+        <header>
+            <div class="card header-card">
+                <div class="card-body text-center py-4">
+                    <h1>Lista Zadań</h1>
+                </div>
+            </div>
+        </header>
+        
+        <main>
+            <section aria-label="Lista zadań">
+                <div class="card todo-card">
+                    <div class="card-body">
+                        {% if todo %}
+                            {% for todos in todo %}
+                                <div class="todo-item d-flex align-items-center {% if todos['done'] %}done{% endif %}">
+                                    <div class="form-check">
+                                        <input class="form-check-input todo-checkbox" 
+                                               type="checkbox" 
+                                               id="todo-{{ todos['id'] }}"
+                                               data-todo-id="{{ todos['id'] }}"
+                                               aria-label="Status wykonania zadania '{{ todos['task'] }}'" 
+                                               {% if todos['done'] %} checked {%endif%}>
+                                    </div>
+                                    <div class="todo-text {% if todos['done'] %}completed{% endif %}">
+                                        {{ todos['task'] }}
+                                    </div>
+                                    <div class="ms-auto d-flex" style="gap: 0.5rem;">
+                                        <a href="{{ url_for('edit', index=todos['id']) }}" 
+                                           class="btn btn-sm btn-edit" 
+                                           aria-label="Edytuj '{{ todos['task'] }}'">
+                                            Edytuj
+                                        </a>
+                                        <a href="{{ url_for('delete', index=todos['id']) }}" 
+                                           class="btn btn-sm btn-delete" 
+                                           aria-label="Usuń '{{ todos['task'] }}'">
+                                            Usuń
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-state">
+                                <p class="mb-0">Brak zadań. Dodaj pierwsze zadanie poniżej!</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </section>
+            
+            <section aria-label="Dodaj nowe zadanie">
+                <div class="card form-card">
+                    <div class="card-body">
+                        <form action="{{ url_for('add') }}" method="post">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <div class="mb-3">
+                                <label for="todo-input" class="form-label fw-semibold">Nowe zadanie:</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="todo-input" 
+                                       name="todos" 
+                                       required 
+                                       minlength="1" 
+                                       maxlength="200"
+                                       aria-required="true"
+                                       aria-label="Wpisz treść nowego zadania"
+                                       placeholder="Wpisz treść zadania...">
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-submit">Dodaj Zadanie</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JavaScript for checkbox toggle -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkboxes = document.querySelectorAll('.todo-checkbox');
+            checkboxes.forEach(function(checkbox) {
+                checkbox.addEventListener('change', function() {
+                    const todoId = this.getAttribute('data-todo-id');
+                    window.location.href = '/check/' + todoId;
+                });
+            });
+        });
+    </script>
 </body>
 </html>
