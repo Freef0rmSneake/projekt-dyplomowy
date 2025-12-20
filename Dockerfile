@@ -1,6 +1,8 @@
-FROM python:3.11-alpine3.23
+FROM python:3.15-alpine
 
 WORKDIR /app
+
+RUN apk add --no-cache curl
 
 COPY requirements.txt .
 
@@ -12,6 +14,9 @@ EXPOSE 5000
 
 ENV FLASK_APP=main.py
 ENV FLASK_ENV=production
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:5000/ || exit 1
 
 CMD ["python", "main.py"]
 
