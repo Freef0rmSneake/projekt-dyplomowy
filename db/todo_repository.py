@@ -1,11 +1,11 @@
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Any, Dict, List, Optional
 
 from .database import get_db
 
 
 def _now_iso() -> str:
-    return datetime.utcnow().isoformat(timespec="seconds") + "Z"
+    return datetime.now(UTC).isoformat(timespec="seconds") + "Z"
 
 
 def get_all_todos() -> List[Dict[str, Any]]:
