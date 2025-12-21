@@ -95,7 +95,7 @@ jobs:
 
       - name: Install Bandit
         run: |
-          pip install bandit[toml]>=1.7.5
+          pip install bandit[toml]
 
       - name: Run Bandit security scan
         run: |
