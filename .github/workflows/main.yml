@@ -10,7 +10,7 @@ on:
 env:
   IMAGE_NAME: todo-app
   REGISTRY: ghcr.io
-  PYTHON_VERSION: '3.15'
+  PYTHON_VERSION: '3.14.2'
 
 jobs:
   checkout:
