@@ -9,7 +9,7 @@ ToDo to aplikacja webowa do zarządzania listą zadań, zbudowana w architekturz
 Aplikacja oferuje następujące funkcjonalności:
 
 - **Wyświetlanie listy zadań** - główna strona prezentuje wszystkie zadania z możliwością wizualnego rozróżnienia zadań wykonanych i niewykonanych
-- **Dodawanie nowych zadań** - formularz umożliwiający dodanie nowego zadania z walidacją po stronie klienta (HTML5)
+- **Dodawanie nowych zadań** - formularz umożliwiający dodanie nowego zadania
 - **Edycja zadań** - możliwość modyfikacji treści istniejącego zadania
 - **Zmiana statusu wykonania** - przełączanie statusu zadania (wykonane/niewykonane) poprzez kliknięcie w checkbox
 - **Usuwanie zadań** - możliwość trwałego usunięcia zadania z bazy danych
@@ -53,17 +53,17 @@ Dyplomowy/
 ## Technologie i narzędzia
 
 ### Backend
-- **Python 3.11** - język programowania
-- **Flask 3.1.2** - framework webowy
-- **SQLite3** - baza danych (wbudowana w Python)
+- **Python** - język programowania
+- **Flask** - framework webowy
+- **SQLite3** - baza danych
 
 ### Frontend
 - **HTML5** - struktura dokumentów
-- **CSS3** - style z wykorzystaniem zmiennych CSS (custom properties)
-- **Bootstrap 5.3.2** - framework CSS dla responsywnego interfejsu
-- **JavaScript (ES6)** - obsługa interakcji checkboxów
+- **CSS3** - style z wykorzystaniem zmiennych CSS
+- **Bootstrap 5** - framework CSS dla responsywnego interfejsu
+- **JavaScript** - obsługa interakcji checkboxów
 
-### DevOps
+### Konteneryzacja
 - **Docker** - konteneryzacja aplikacji
 - **Docker Compose** - orkiestracja kontenerów
 - **Alpine Linux** - lekki obraz bazowy dla kontenera
@@ -88,12 +88,10 @@ CREATE TABLE IF NOT EXISTS todos (
 - `id` - unikalny identyfikator zadania (klucz główny)
 - `task` - treść zadania (maksymalnie 200 znaków)
 - `done` - status wykonania (0 = niewykonane, 1 = wykonane)
-- `created_at` - data i czas utworzenia zadania (format ISO8601)
-- `updated_at` - data i czas ostatniej modyfikacji (format ISO8601)
+- `created_at` - data i czas utworzenia zadania
+- `updated_at` - data i czas ostatniej modyfikacji
 
-Baza danych jest automatycznie inicjalizowana przy pierwszym uruchomieniu aplikacji poprzez funkcję `init_db()` wywoływaną w hook'u `@app.before_request`.
-
-### Warstwa dostępu do danych (Repository Pattern)
+### Warstwa dostępu do danych
 
 Moduł `db/todo_repository.py` implementuje wzorzec Repository, izolując logikę dostępu do danych od reszty aplikacji. Zawiera następujące funkcje:
 
@@ -109,7 +107,7 @@ Moduł `db/todo_repository.py` implementuje wzorzec Repository, izolując logik�
 
 Aplikacja implementuje następujące mechanizmy bezpieczeństwa:
 
-**Ochrona CSRF (Cross-Site Request Forgery)**
+**CSRF**
 - Każdy formularz zawiera ukryte pole z tokenem CSRF
 - Token jest generowany i przechowywany w sesji użytkownika
 - Wszystkie żądania POST są walidowane pod kątem poprawności tokenu
@@ -133,7 +131,7 @@ Interfejs został zaprojektowany z wykorzystaniem Bootstrap 5 oraz niestandardow
 - Gradient tła łączący oba kolory
 
 **Komponenty:**
-- Karty (cards) dla głównych sekcji
+- Karty dla głównych sekcji
 - Responsywne formularze z walidacją
 - Checkboxy z automatycznym przełączaniem statusu
 - Przyciski z hover effects
@@ -145,40 +143,8 @@ Interfejs został zaprojektowany z wykorzystaniem Bootstrap 5 oraz niestandardow
 ### Wymagania wstępne
 
 - Python 3.11 lub nowszy
-- pip (menedżer pakietów Python)
-- Docker i Docker Compose (opcjonalnie, dla konteneryzacji)
-
-### Instalacja lokalna (bez Dockera)
-
-1. **Sklonuj repozytorium lub pobierz pliki projektu**
-
-2. **Utwórz wirtualne środowisko Python (zalecane)**
-```bash
-python -m venv venv
-```
-
-3. **Aktywuj wirtualne środowisko**
-```bash
-# Windows
-venv\Scripts\activate
-
-# Linux/macOS
-source venv/bin/activate
-```
-
-4. **Zainstaluj zależności**
-```bash
-pip install -r requirements.txt
-```
-
-5. **Uruchom aplikację**
-```bash
-python main.py
-```
-
-Aplikacja będzie dostępna pod adresem: `http://localhost:5000`
-
-### Instalacja z wykorzystaniem Dockera
+- pip
+- Docker
 
 1. **Zbuduj obraz Docker**
 ```bash
