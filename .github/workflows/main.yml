@@ -29,6 +29,9 @@ jobs:
           test -f requirements.txt || exit 1
           test -f Dockerfile || exit 1
           test -d templates || exit 1
+          test -d db || exit 1
+          test -f db/database.py || exit 1
+          test -f db/todo_repository.py || exit 1
           echo "Repository structure verified"
 
   build:
@@ -86,6 +89,10 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
 
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
       - name: Install Bandit
         run: |
           pip install bandit[toml]>=1.7.5
@@ -96,7 +103,7 @@ jobs:
           bandit -r . \
             -f json -o bandit-report.json \
             -ll \
-            --exclude ./tests,./.git,./__pycache__,./.github \
+            --exclude ./tests,./.git,./__pycache__,./.github,./templates \
             || true
 
       - name: Run Bandit security scan (human readable)
@@ -104,7 +111,7 @@ jobs:
           # Wyświetla wyniki w konsoli (do screenshotów)
           bandit -r . \
             -ll \
-            --exclude ./tests,./.git,./__pycache__,./.github
+            --exclude ./tests,./.git,./__pycache__,./.github,./templates
 
       - name: Upload Bandit report
         uses: actions/upload-artifact@v4
