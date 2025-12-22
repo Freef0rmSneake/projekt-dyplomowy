@@ -102,7 +102,7 @@ jobs:
           # Skanuje kod, generuje raport JSON
           bandit -r . \
             -f json -o bandit-report.json \
-            -ll \
+            -l \
             --exclude ./tests,./.git,./__pycache__,./.github,./templates \
             || true
 
@@ -110,7 +110,7 @@ jobs:
         run: |
           # Wyświetla wyniki w konsoli (do screenshotów)
           bandit -r . \
-            -ll \
+            -l \
             --exclude ./tests,./.git,./__pycache__,./.github,./templates
 
       - name: Upload Bandit report
@@ -151,7 +151,7 @@ jobs:
 
       - name: Run Safety dependency scan
         run: |
-          safety check --file requirements.txt --json --output safety-report.json || true
+          safety check --file requirements.txt --json > safety-report.json || true
 
       - name: Run Safety dependency scan (human readable)
         run: |
@@ -197,7 +197,7 @@ jobs:
           docker load -i /tmp/image.tar
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.50
         with:
           image-ref: ${{ env.IMAGE_NAME }}:latest
           format: 'table'
