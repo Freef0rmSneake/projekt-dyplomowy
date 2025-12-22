@@ -131,6 +131,50 @@ jobs:
             fi
           fi
 
+  dependency-scan-safety:
+    name: Dependency Scan - Safety
+    runs-on: ubuntu-latest
+    needs: checkout
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install Safety
+        run: |
+          pip install safety
+
+      - name: Run Safety dependency scan
+        run: |
+          safety check --file requirements.txt --json --output safety-report.json || true
+
+      - name: Run Safety dependency scan (human readable)
+        run: |
+          safety check --file requirements.txt
+
+      - name: Upload Safety report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: safety-report
+          path: safety-report.json
+          retention-days: 30
+
+      - name: Safety security check (Blocker)
+        run: |
+          if [ -f safety-report.json ]; then
+            VULN_COUNT=$(python -c "import json; data=json.load(open('safety-report.json')); print(len(data.get('vulnerabilities', [])))")
+            if [ "$VULN_COUNT" -gt 0 ]; then
+              echo "::error::Safety found $VULN_COUNT vulnerabilities in dependencies"
+              exit 1
+            fi
+          fi
+
   container-scan-trivy:
     name: Container Scan - Trivy
     runs-on: ubuntu-latest
@@ -164,7 +208,7 @@ jobs:
   security-summary:
     name: Security Summary
     runs-on: ubuntu-latest
-    needs: [sast-bandit, container-scan-trivy]
+    needs: [sast-bandit, dependency-scan-safety, container-scan-trivy]
     if: always()
     steps:
       - name: Download all artifacts
@@ -179,17 +223,30 @@ jobs:
           
           echo "### SAST (Bandit)" >> $GITHUB_STEP_SUMMARY
           if [ -f security-reports/bandit-report/bandit-report.json ]; then
-            echo "✅ Bandit scan completed" >> $GITHUB_STEP_SUMMARY
+            echo "Bandit scan completed" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ Bandit scan failed" >> $GITHUB_STEP_SUMMARY
+            echo "Bandit scan failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### Dependency Scan (Safety)" >> $GITHUB_STEP_SUMMARY
+          if [ -f security-reports/safety-report/safety-report.json ]; then
+            VULN_COUNT=$(python -c "import json; data=json.load(open('security-reports/safety-report/safety-report.json')); print(len(data.get('vulnerabilities', [])))" 2>/dev/null || echo "0")
+            if [ "$VULN_COUNT" -eq 0 ]; then
+              echo "Safety scan completed - No vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "Safety scan completed - Found $VULN_COUNT vulnerabilities" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "Safety scan failed" >> $GITHUB_STEP_SUMMARY
           fi
           
           echo "" >> $GITHUB_STEP_SUMMARY
           
           echo "### Container Scan (Trivy)" >> $GITHUB_STEP_SUMMARY
-          # Sprawdzamy status joba Trivy (uproszczone)
           if [ "${{ needs.container-scan-trivy.result }}" == "success" ]; then
-             echo "✅ Trivy scan completed" >> $GITHUB_STEP_SUMMARY
+             echo "Trivy scan completed" >> $GITHUB_STEP_SUMMARY
           else
-             echo "❌ Trivy scan failed" >> $GITHUB_STEP_SUMMARY
+             echo "Trivy scan failed" >> $GITHUB_STEP_SUMMARY
           fi
