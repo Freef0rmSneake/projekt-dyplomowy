@@ -159,7 +159,7 @@ jobs:
           docker load -i /tmp/image.tar
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.68.1
+        uses: aquasecurity/trivy-action@0.33.1
         with:
           image-ref: ${{ env.IMAGE_NAME }}:latest
           format: 'table'
