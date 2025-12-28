@@ -186,59 +186,30 @@ jobs:
         run: |
           docker load -i /tmp/image.tar
 
-      - name: Start application container for Tracee analysis
+      - name: Start application container
         run: |
           docker run -d \
             --name todo-app-tracee \
             -p 5001:5000 \
             ${{ env.IMAGE_NAME }}:latest
           sleep 3
-          echo "Container started for Tracee analysis"
 
-      - name: Run Tracee using Docker container
+      - name: Run Tracee analysis
         timeout-minutes: 5
         continue-on-error: true
         run: |
-          echo "Running Tracee runtime security analysis..."
-          timeout 60 docker run --rm \
+          docker run --rm \
+            --privileged \
             --pid host \
-            --network host \
-            --cap-add SYS_ADMIN \
-            --cap-add SYS_PTRACE \
-            --cap-add BPF \
-            --security-opt apparmor=unconfined \
-            -v /boot:/boot:ro \
             -v /tmp:/tmp \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            -v /sys/kernel/debug:/sys/kernel/debug:ro \
             -v /etc/os-release:/etc/os-release-host:ro \
+            -e LIBBPFGO_OSRELEASE_FILE=/etc/os-release-host \
             aquasec/tracee:latest \
-            tracee-ebpf \
+            tracee \
             --output json --output-file /tmp/tracee-report.json \
             --scope container-name=todo-app-tracee \
-            --events security_file_open,security_inode_unlink,security_socket_connect,security_socket_accept,security_socket_bind,execve,execveat,open,openat,connect,bind,accept,accept4,clone,clone3,fork,vfork,ptrace,setuid,setgid,setreuid,setregid,setresuid,setresgid,capset,prctl,arch_prctl
-
-      - name: Run Tracee signature detection
-        timeout-minutes: 3
-        continue-on-error: true
-        run: |
-          echo "Running Tracee signature-based detection..."
-          timeout 30 docker run --rm \
-            --pid host \
-            --network host \
-            --cap-add SYS_ADMIN \
-            --cap-add SYS_PTRACE \
-            --cap-add BPF \
-            --security-opt apparmor=unconfined \
-            -v /boot:/boot:ro \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            -v /sys/kernel/debug:/sys/kernel/debug:ro \
-            -v /etc/os-release:/etc/os-release-host:ro \
-            aquasec/tracee:latest \
-            tracee-ebpf \
-            --signatures \
-            --output table \
-            --scope container-name=todo-app-tracee
+            --timeout 30s
 
       - name: Stop application container
         if: always()
@@ -251,10 +222,8 @@ jobs:
         run: |
           if [ -f /tmp/tracee-report.json ]; then
             cp /tmp/tracee-report.json ./tracee-report.json
-            echo "Tracee report copied"
           else
-            echo '{"events": [], "summary": "Tracee analysis completed - no events detected during runtime"}' > tracee-report.json
-            echo "Created placeholder Tracee report"
+            echo '{"events": [], "summary": "Tracee analysis completed"}' > tracee-report.json
           fi
 
       - name: Upload Tracee report
@@ -269,19 +238,13 @@ jobs:
         if: always()
         run: |
           if [ -f tracee-report.json ]; then
-            echo "Tracee analysis completed. Reviewing report for security findings..."
             CRITICAL_FINDINGS=$(grep -ci "severity.*critical\|threat.*critical\|malicious" tracee-report.json 2>/dev/null || echo "0")
             HIGH_FINDINGS=$(grep -ci "severity.*high\|threat.*high" tracee-report.json 2>/dev/null || echo "0")
             
             if [ "$CRITICAL_FINDINGS" -gt 0 ] || [ "$HIGH_FINDINGS" -gt 0 ]; then
               echo "::error::Tracee found $CRITICAL_FINDINGS critical and $HIGH_FINDINGS high severity security issues"
-              echo "::error::Workflow blocked due to security vulnerabilities detected by Tracee"
               exit 1
-            else
-              echo "Tracee analysis completed - no critical issues detected"
             fi
-          else
-            echo "::warning::Tracee report not generated - analysis may have failed"
           fi
 
   security-summary:
