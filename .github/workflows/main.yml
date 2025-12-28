@@ -206,8 +206,8 @@ jobs:
             -v /etc/os-release:/etc/os-release-host:ro \
             -e LIBBPFGO_OSRELEASE_FILE=/etc/os-release-host \
             aquasec/tracee:latest \
-            --output json --output-file /tmp/tracee-report.json \
-            --scope container-name=todo-app-tracee \
+            --output json:tracee-report.json \
+            --scope container-name:todo-app-tracee \
             --timeout 30s
 
       - name: Stop application container
