@@ -211,6 +211,7 @@ jobs:
             -v /tmp:/tmp \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -v /sys/kernel/debug:/sys/kernel/debug:ro \
+            -v /etc/os-release:/etc/os-release-host:ro \
             aquasec/tracee:latest \
             tracee-ebpf \
             --output json --output-file /tmp/tracee-report.json \
@@ -232,6 +233,7 @@ jobs:
             -v /boot:/boot:ro \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -v /sys/kernel/debug:/sys/kernel/debug:ro \
+            -v /etc/os-release:/etc/os-release-host:ro \
             aquasec/tracee:latest \
             tracee-ebpf \
             --signatures \
