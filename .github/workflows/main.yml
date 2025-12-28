@@ -104,12 +104,12 @@ jobs:
           pip install bandit[toml]
 
       - name: Run Bandit security scan
+        continue-on-error: true
         run: |
           bandit -r . \
             -f json -o bandit-report.json \
             -ll \
-            --exclude ./tests,./.git,./__pycache__,./.github,./templates \
-            || true
+            --exclude ./tests,./.git,./__pycache__,./.github,./templates
 
       - name: Run Bandit security scan (human readable)
         run: |
@@ -197,6 +197,7 @@ jobs:
 
       - name: Run Tracee using Docker container
         timeout-minutes: 5
+        continue-on-error: true
         run: |
           echo "Running Tracee runtime security analysis..."
           timeout 60 docker run --rm \
@@ -214,10 +215,11 @@ jobs:
             tracee-ebpf \
             --output json --output-file /tmp/tracee-report.json \
             --scope container-name=todo-app-tracee \
-            --events security_file_open,security_inode_unlink,security_socket_connect,security_socket_accept,security_socket_bind,execve,execveat,open,openat,connect,bind,accept,accept4,clone,clone3,fork,vfork,ptrace,setuid,setgid,setreuid,setregid,setresuid,setresgid,capset,prctl,arch_prctl || true
+            --events security_file_open,security_inode_unlink,security_socket_connect,security_socket_accept,security_socket_bind,execve,execveat,open,openat,connect,bind,accept,accept4,clone,clone3,fork,vfork,ptrace,setuid,setgid,setreuid,setregid,setresuid,setresgid,capset,prctl,arch_prctl
 
       - name: Run Tracee signature detection
         timeout-minutes: 3
+        continue-on-error: true
         run: |
           echo "Running Tracee signature-based detection..."
           timeout 30 docker run --rm \
@@ -234,7 +236,7 @@ jobs:
             tracee-ebpf \
             --signatures \
             --output table \
-            --scope container-name=todo-app-tracee || true
+            --scope container-name=todo-app-tracee
 
       - name: Stop application container
         if: always()
@@ -261,19 +263,23 @@ jobs:
           path: tracee-report.json
           retention-days: 30
 
-      - name: Tracee security check
+      - name: Tracee security check (Blocker)
         if: always()
         run: |
           if [ -f tracee-report.json ]; then
-            echo "Tracee analysis completed. Review the report for security findings."
-            # Check if report contains security findings
-            if grep -qi "severity.*critical\|severity.*high\|threat\|malicious\|suspicious" tracee-report.json 2>/dev/null; then
-              echo "::warning::Tracee found potential security issues"
+            echo "Tracee analysis completed. Reviewing report for security findings..."
+            CRITICAL_FINDINGS=$(grep -ci "severity.*critical\|threat.*critical\|malicious" tracee-report.json 2>/dev/null || echo "0")
+            HIGH_FINDINGS=$(grep -ci "severity.*high\|threat.*high" tracee-report.json 2>/dev/null || echo "0")
+            
+            if [ "$CRITICAL_FINDINGS" -gt 0 ] || [ "$HIGH_FINDINGS" -gt 0 ]; then
+              echo "::error::Tracee found $CRITICAL_FINDINGS critical and $HIGH_FINDINGS high severity security issues"
+              echo "::error::Workflow blocked due to security vulnerabilities detected by Tracee"
+              exit 1
             else
               echo "Tracee analysis completed - no critical issues detected"
             fi
           else
-            echo "::warning::Tracee report not generated"
+            echo "::warning::Tracee report not generated - analysis may have failed"
           fi
 
   security-summary:
@@ -292,30 +298,54 @@ jobs:
           echo "## Security Scan Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
+          CRITICAL_ISSUES_FOUND=false
+          
           echo "### SAST (Bandit)" >> $GITHUB_STEP_SUMMARY
-          if [ -f security-reports/bandit-report/bandit-report.json ]; then
-            echo "Bandit scan completed" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.sast-bandit.result }}" == "success" ]; then
+            if [ -f security-reports/bandit-report/bandit-report.json ]; then
+              echo "Bandit scan completed - no HIGH severity issues" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "Bandit scan completed but report not found" >> $GITHUB_STEP_SUMMARY
+            fi
           else
-            echo "Bandit scan failed" >> $GITHUB_STEP_SUMMARY
+            echo "Bandit scan FAILED - HIGH severity issues detected" >> $GITHUB_STEP_SUMMARY
+            CRITICAL_ISSUES_FOUND=true
           fi
           
           echo "" >> $GITHUB_STEP_SUMMARY
           
           echo "### Container Scan (Trivy)" >> $GITHUB_STEP_SUMMARY
           if [ "${{ needs.container-scan-trivy.result }}" == "success" ]; then
-             echo "Trivy scan completed" >> $GITHUB_STEP_SUMMARY
+             echo "Trivy scan completed - no CRITICAL/HIGH vulnerabilities" >> $GITHUB_STEP_SUMMARY
           else
-             echo "Trivy scan failed" >> $GITHUB_STEP_SUMMARY
+             echo "Trivy scan FAILED - CRITICAL/HIGH vulnerabilities detected" >> $GITHUB_STEP_SUMMARY
+             CRITICAL_ISSUES_FOUND=true
           fi
           
           echo "" >> $GITHUB_STEP_SUMMARY
           
           echo "### Runtime Security (Tracee)" >> $GITHUB_STEP_SUMMARY
           if [ "${{ needs.runtime-security-tracee.result }}" == "success" ]; then
-             echo "Tracee analysis completed" >> $GITHUB_STEP_SUMMARY
+             echo "Tracee analysis completed - no critical issues detected" >> $GITHUB_STEP_SUMMARY
           else
-             echo "Tracee analysis completed with warnings" >> $GITHUB_STEP_SUMMARY
+             echo "Tracee analysis FAILED - critical security issues detected" >> $GITHUB_STEP_SUMMARY
+             CRITICAL_ISSUES_FOUND=true
           fi
           if [ -f security-reports/tracee-report/tracee-report.json ]; then
             echo "Tracee report available in artifacts" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "$CRITICAL_ISSUES_FOUND" = "true" ]; then
+            echo "## Security Pipeline FAILED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Workflow blocked due to security vulnerabilities detected.**" >> $GITHUB_STEP_SUMMARY
+            echo "Please review the security reports and fix the issues before merging." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "## Security Pipeline PASSED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "All security scans completed successfully. No critical vulnerabilities detected." >> $GITHUB_STEP_SUMMARY
           fi
