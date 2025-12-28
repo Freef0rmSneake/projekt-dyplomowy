@@ -72,15 +72,22 @@ jobs:
 
       - name: Save Docker image
         run: |
-          docker save ${{ env.IMAGE_NAME }}:latest -o /tmp/image.tar
+          if docker inspect ${{ env.IMAGE_NAME }}:latest > /dev/null 2>&1; then
+            docker save ${{ env.IMAGE_NAME }}:latest -o /tmp/image.tar
+          else
+            echo "Docker image not found, skipping save"
+            exit 0
+          fi
         if: always()
 
       - name: Upload Docker image artifact
         uses: actions/upload-artifact@v6
+        if: always()
         with:
           name: docker-image
           path: /tmp/image.tar
           retention-days: 1
+          if-no-files-found: ignore
 
       - name: Stop Tracee
         uses: aquasecurity/tracee-action@v0.3.0-stop
@@ -143,6 +150,7 @@ jobs:
             echo "::error::Bandit report file not found"
             exit 1
           fi
+        if: always()
 
   container-scan-trivy:
     name: Container Scan - Trivy
