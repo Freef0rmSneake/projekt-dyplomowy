@@ -208,7 +208,6 @@ jobs:
             aquasec/tracee:latest \
             --output json:tracee-report.json \
             --scope container-name:todo-app-tracee \
-            --timeout 30s
 
       - name: Stop application container
         if: always()
